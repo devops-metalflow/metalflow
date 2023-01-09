@@ -1,0 +1,24 @@
+---
+builds:
+  - id: metalflow
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+    dir: .
+    main: main.go
+    binary: metalflow
+    flags:
+      - -trimpath
+    ldflags: -s -w -X github.com/devops-metalflow/metalflow/config.Build={{.Date}} -X github.com/devops-metalflow/metalflow/config.Version={{.Version}}
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - Merge pull request
+      - Merge branch
