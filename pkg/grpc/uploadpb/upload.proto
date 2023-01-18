@@ -1,0 +1,23 @@
+// Refer: https://github.com/craftslab/metaltask/blob/master/src/flow/flow.proto
+syntax = "proto3";
+option go_package = "./pkg/grpc/uploadpb";
+package flow;
+
+// The service definition.
+service TaskProto {
+  // Sends task
+  rpc SendTask (stream TaskRequest) returns (TaskReply) {}
+}
+
+// The request message.
+message TaskRequest {
+  bytes data = 1;
+  string path = 2;
+  bool runnable = 3;
+}
+
+// The response message.
+message TaskReply {
+  string error = 1;
+  string output = 2;
+}

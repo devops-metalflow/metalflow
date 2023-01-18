@@ -1,0 +1,21 @@
+// Refer: https://github.com/devops-metalflow/metalmetrics/blob/master/src/flow/flow.proto
+syntax = "proto3";
+option go_package = "./pkg/grpc/pb";
+package flow;
+
+// The service definition.
+service MetricsProto {
+  // Sends metrics
+  rpc SendMetrics (MetricsRequest) returns (MetricsReply) {}
+}
+
+// The request message.
+message MetricsRequest {
+  string message = 1;
+}
+
+// The response message.
+message MetricsReply {
+  string error = 1;
+  string output = 2;
+}

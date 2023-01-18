@@ -8,27 +8,27 @@
 
 
 
-> English | [中文](README_zh.md)
+> [English](README.md) | 中文
 
 
 
-## Introduction
+## 介绍
 
-*metalflow* is the server of [metalflow](https://github.com/devops-metalflow) written in Go.
+*metalflow* 作为 [metalweb](https://github.com/devops-metalflow/metalweb) 服务端，为其提供 REST API，并通过服务注册中心 `consul` 进行服务发现。
 
 
 
-## Prerequisites
+## 前提
 
 - Go >= 1.18.0
 
 
 
-## Preparation
+## 准备
 
-### [Consul](https://developer.hashicorp.com/consul/downloads)
+### [Consul](https://developer.hashicorp.com/consul/)
 
-- **Install**
+- **安装**
 
 ```bash
 wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
@@ -37,7 +37,7 @@ apt update
 apt install -y consul
 ```
 
-- **Run**
+- **运行**
 
 ```bash
 consul agent -dev -ui -client=0.0.0.0
@@ -47,13 +47,13 @@ consul agent -dev -ui -client=0.0.0.0
 
 ### MySQL
 
-- **Deploy**
+- **部署**
 
 ```bash
 docker run -itd --name mysql-test -p 3306:3306 -e MYSQL_ROOT_PASSWORD=db_admin mysql:latest
 ```
 
-- **Init**
+- **初始化**
 
 ```bash
 mysql -h 10.34.56.78 -u root -p
@@ -62,26 +62,26 @@ mysql> CREATE DATABASE metalflow;
 
 ### Redis
 
-- **Deploy**
+- **部署**
 
 ```bash
 docker run -itd --name redis-test -p 6379:6379 redis:latest
 ```
-OR
+或
 ```bash
 docker run -itd --name redis-test -p 6379:6379 redis:latest --requirepass "123456"
 ```
 
 
 
-## Run
+## 运行
 
 ```bash
 make build
 ./metalflow --config-file=config.yml
 ```
 
-> Visit [http://127.0.0.1:8089/api/ping](http://127.0.0.1:8089/api/ping) in browser to check status as below
+访问 [http://127.0.0.1:8089/api/ping](http://127.0.0.1:8089/api/ping) 可获取运行状态，例如：
 
 ```json
 {
@@ -93,7 +93,7 @@ make build
 
 
 
-## Usage
+## 用法
 
 ```
 usage: metalflow [<flags>]
@@ -108,21 +108,21 @@ Flags:
 
 
 
-## Settings
+## 配置
 
-*metalflow* parameters can be set in the directory [conf](https://github.com/devops-metalflow/metalflow/blob/main/initialize/conf).
+*metalflow* 相关配置参数见 [conf](https://github.com/devops-metalflow/metalflow/blob/main/initialize/conf)。
 
-An example of configuration in [config.yml](https://github.com/devops-metalflow/metalflow/blob/main/initialize/conf/config.prod.yml):
-
-
-
-## License
-
-Project License can be found [here](LICENSE).
+配置文件示例见 [config.yml](https://github.com/devops-metalflow/metalflow/blob/main/initialize/conf/config.prod.yml)。
 
 
 
-## Reference
+## 协议
+
+本项目协议声明见 [here](LICENSE)。
+
+
+
+## 感谢
 
 - [casbin](https://github.com/casbin/casbin): An authorization library that supports access control models like ACL, RBAC, ABAC in Golang.
 - [Consul](https://github.com/hashicorp/consul): a distributed, highly available, and data center aware solution to connect and configure applications across dynamic, distributed infrastructure.

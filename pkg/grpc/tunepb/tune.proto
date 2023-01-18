@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+option go_package = "./pkg/grpc/tunepb";
+
+package metaltune;
+
+// The service definition.
+service ServerProto {
+  rpc SendServer (ServerRequest) returns (ServerReply) {}
+}
+
+// The request message.
+message ServerRequest {
+  string apiVersion = 1;
+  string kind = 2;
+  Metadata metadata = 3;
+  Spec spec = 4;
+}
+
+message Metadata {
+  string name = 1;
+}
+
+message Spec {
+  bool cleanup = 1;
+  Tuning tuning = 2;
+  bool turbo = 3;
+}
+
+message Tuning {
+  bool auto = 1;
+  string profile = 2;
+}
+
+// The response message.
+message ServerReply {
+  string error = 1;
+  string output = 2;
+}

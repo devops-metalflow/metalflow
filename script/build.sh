@@ -1,9 +1,6 @@
 #!/bin/bash
 
-build=$(date +%FT%T%z)
-version="$1"
-
-ldflags="-s -w -X github.com/devops-metalflow/metalflow/config.Build=$build -X github.com/devops-metalflow/metalflow/config.Version=$version"
+ldflags="-s -w"
 target="metalflow"
 
 go env -w GOPROXY=https://goproxy.cn,direct

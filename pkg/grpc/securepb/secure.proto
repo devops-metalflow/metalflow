@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+option go_package = "./pkg/grpc/securepb";
+
+package metalsecure;
+
+// The service definition.
+service ServerProto {
+  rpc SendServer (ServerRequest) returns (ServerReply) {}
+}
+
+// The request message.
+message ServerRequest {
+  string apiVersion = 1;
+  string kind = 2;
+  Metadata metadata = 3;
+  Spec spec = 4;
+
+  message Metadata {
+    string name = 1;
+  }
+
+  message Spec {
+    Stats stats = 1;
+    Bare bare = 2;
+    Docker docker = 3;
+
+    message Stats {
+      bool dockers = 1;
+    }
+
+    message Bare {
+      repeated string paths = 1;
+      bool sbom = 2;
+      bool vul = 3;
+    }
+
+    message Docker {
+      repeated Image images = 1;
+      bool sbom = 2;
+      bool vul = 3;
+
+      message Image {
+        string repo = 1;
+        string tag = 2;
+      }
+    }
+  }
+}
+
+// The response message.
+message ServerReply {
+  string error = 1;
+  Output output = 2;
+
+  message Output {
+    Bare bare = 1;
+    Docker docker = 2;
+    Stats stats = 3;
+
+    message Bare {
+      string sbom = 1;
+      string vul = 2;
+    }
+
+    message Docker {
+      string sbom = 1;
+      string vul = 2;
+    }
+
+    message Stats {
+      repeated Docker dockers = 1;
+
+      message Docker {
+        string repo = 1;
+        string tag = 2;
+      }
+    }
+  }
+}

@@ -1,0 +1,146 @@
+system:
+  # url前缀
+  url-path-prefix: api
+  # 接口版本, 紧跟url-path-prefix后
+  api-version: v1
+  # 程序监听端口
+  port: 8089
+  # 性能调试端口
+  pprof-port: 10005
+  # 连接超时时间(秒, 初始化连接mysql/redis等默认超时时间设置, 小于1无效)
+  connect-timeout: 5
+  # 执行超时时间设置
+  execute-timeout: 30
+  # 开启全局事务管理器
+  transaction: true
+  # 是否初始化数据(没有初始数据时使用, 已发布正式版谨慎使用)
+  init-data: true
+  # 操作日志key
+  operation-log-key: operation_log_response
+  # 不写操作日志的路径列表
+  operation-log-disabled-paths: /operation/log/delete/batch,/upload/file
+  # 允许用户删除操作日志
+  operation-log-allowed-to-delete: false
+  # 幂等性token名称
+  idempotence-token-name: api-idempotence-token
+  # 是否启用定时刷新注册机器节点信息的任务(corn表达式,并增加秒，第一位即为秒。见文档：https://github.com/rfyiamcool/cronlib#time-format-usage)。如每隔10分钟可以用 0 */10 * * * * 或 @every 10m
+  node-metrics-cron-task: ''
+
+logs:
+  # 日志等级(-1:Debug, 0:Info, -1<=level<=5, 参照zap.level源码)
+  level: -1
+  # 日志路径
+  path: logs
+  # 文件最大大小, M
+  max-size: 50
+  # 备份数
+  max-backups: 100
+  # 存放时间, 天
+  max-age: 30
+  # 是否压缩
+  compress: false
+
+node:
+  # 网段与地域关系对照映射
+  addr-bind:
+    - addr: Chengdu
+      ips:
+        - 10.12
+    - addr: Shanghai
+      ips:
+        - 10.23
+        - 10.34
+        - 10.45
+    - addr: Xi'an
+      ips:
+        - 10.56
+        - 10.78
+
+# consul
+consul:
+  #consul服务地址
+  address: 127.0.0.1
+  # consul端口
+  port: 8500
+
+mysql:
+  # 用户名
+  username: root
+  # 密码
+  password: db_admin
+  # 数据库名
+  database: metalflow
+  # 主机地址(地址改为docker内网地址, 参见gin-web-docker项目docker-compose.yml配置)
+  host: 127.0.0.1
+  # 端口
+  port: 3306
+  # 连接字符串查询参数
+  query: parseTime=True&loc=Local&timeout=10000ms
+  # 是否打印日志
+  log-mode: false
+  # 数据库表前缀(无需在末尾添加下划线, 程序内部自动处理)
+  table-prefix: tb
+  # 编码方式
+  charset: utf8mb4
+  # 字符集(utf8mb4_general_ci速度比utf8mb4_unicode_ci快些)
+  collation: utf8mb4_general_ci
+
+redis:
+  # 主机地址
+  host: 127.0.0.1
+  # 端口
+  port: 6377
+  # 密码(默认为空)
+  password: redis.233
+  # 数据库编号
+  database: 0
+  # binlog位置缓存键
+  binlog-pos: mysql_binlog_pos
+
+# casbin配置
+casbin:
+  # 模型配置文件, 默认以conf目录为根目录
+  model-path: 'rbac_model.conf'
+
+# jwt配置
+jwt:
+  # jwt标识
+  realm: test jwt
+  # 服务端密钥
+  key: secret-key
+  # token过期时间, 小时
+  timeout: 24
+  # 刷新token最大过期时间, 小时
+  max-refresh: 168
+
+# 上传配置
+upload:
+  # 上传文件保存路径
+  save-dir: upload
+  # 单个文件或分片文件最大限制, 单位MB(上传文件先读取到内存, 如果这个值设置过大会导致内存崩溃)
+  single-max-size: 32
+  # 合并文件并发数(并发合并文件会提升性能, 但如果设置过大性能降低, 结合实际机器性能配置)
+  merge-concurrent-count: 10
+
+# 速率限制配置
+rate-limit:
+  # 访问最大限制, 次/秒
+  max: 200
+
+# 节点状态异常后邮件通知
+mail:
+  # smtp服务器地址。若为空字符串，则不进行通知
+  host: ''
+  port: 25
+  username: ''
+  password: ''
+  # 发件人邮箱， 不用跟邮件后缀，后续会统一加上
+  from: mail
+  # 发件人名称
+  header: METALFLOW
+  # 邮箱地址后缀。注意 @符号必须得用引号包裹，不然不是合法的yaml语法
+  suffix: '@example.com'
+  # cc 抄送人。可选择多个。注意需要用字符串包裹，不然会当数字处理舍弃掉最前面的无效零
+  cc:
+    - 'jack'
+    - 'rose'
