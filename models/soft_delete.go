@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"database/sql/driver"
 	"fmt"
 	"metalflow/pkg/global"
@@ -140,14 +139,13 @@ func (sd SoftDeleteDeleteClause) MergeClause(*clause.Clause) {
 }
 
 func (sd SoftDeleteDeleteClause) ModifyStatement(stmt *gorm.Statement) {
-	ctx := context.Background()
 	if stmt.SQL.String() == "" {
 		curTime := stmt.DB.NowFunc()
 		stmt.AddClause(clause.Set{{Column: clause.Column{Name: sd.Field.DBName}, Value: curTime}})
 		stmt.SetColumn(sd.Field.DBName, curTime, true)
 
 		if stmt.Schema != nil {
-			_, queryValues := schema.GetIdentityFieldValuesMap(ctx, stmt.ReflectValue, stmt.Schema.PrimaryFields)
+			_, queryValues := schema.GetIdentityFieldValuesMap(stmt.ReflectValue, stmt.Schema.PrimaryFields)
 			column, values := schema.ToQueryValues(stmt.Table, stmt.Schema.PrimaryFieldDBNames, queryValues)
 
 			if len(values) > 0 {
@@ -155,7 +153,7 @@ func (sd SoftDeleteDeleteClause) ModifyStatement(stmt *gorm.Statement) {
 			}
 
 			if stmt.ReflectValue.CanAddr() && stmt.Dest != stmt.Model && stmt.Model != nil {
-				_, queryValues = schema.GetIdentityFieldValuesMap(ctx, reflect.ValueOf(stmt.Model), stmt.Schema.PrimaryFields)
+				_, queryValues = schema.GetIdentityFieldValuesMap(reflect.ValueOf(stmt.Model), stmt.Schema.PrimaryFields)
 				column, values = schema.ToQueryValues(stmt.Table, stmt.Schema.PrimaryFieldDBNames, queryValues)
 
 				if len(values) > 0 {
