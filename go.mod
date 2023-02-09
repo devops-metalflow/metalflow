@@ -9,7 +9,7 @@ require (
 	github.com/bndr/gojenkins v1.1.0
 	github.com/casbin/casbin/v2 v2.31.5
 	github.com/casbin/gorm-adapter/v3 v3.3.1
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.7.7
 	github.com/go-mail/mail v2.3.1+incompatible
 	github.com/go-playground/locales v0.13.0
 	github.com/go-playground/universal-translator v0.17.0
