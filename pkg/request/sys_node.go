@@ -8,6 +8,7 @@ import (
 type NodeListRequestStruct struct {
 	Address           string `json:"address" form:"address"`
 	SshPort           int    `json:"sshPort" form:"sshPort"`
+	Os                string `json:"os" form:"os"`
 	Asset             string `json:"asset" form:"asset"`
 	Health            *uint  `json:"health" form:"health"`
 	Manager           string `json:"manager" form:"manager"`
@@ -22,6 +23,7 @@ type NodeListRequestStruct struct {
 type CreateNodeRequestStruct struct {
 	Address     string    `json:"address" form:"address" validate:"required"`
 	SshPort     uint      `json:"sshPort" form:"sshPort" validate:"required"`
+	Os          string    `json:"os" form:"os" validate:"required"`
 	ServicePort int       `json:"servicePort" form:"servicePort"`
 	Asset       string    `json:"asset" form:"asset"`
 	Health      *uint     `json:"health" form:"health"`
@@ -80,5 +82,6 @@ func (s *CreateNodeRequestStruct) FieldTrans() map[string]string {
 	m := make(map[string]string, 0)
 	m["Address"] = "主机ip"
 	m["SshPort"] = "ssh端口"
+	m["Os"] = "操作系统"
 	return m
 }

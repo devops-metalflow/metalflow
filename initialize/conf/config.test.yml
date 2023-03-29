@@ -25,6 +25,9 @@ system:
   idempotence-token-name: api-idempotence-token
   # 是否启用定时刷新注册机器节点信息的任务(corn表达式,并增加秒，第一位即为秒。见文档：https://github.com/rfyiamcool/cronlib#time-format-usage)。如每隔10分钟可以用 0 */10 * * * * 或 @every 10m
   node-metrics-cron-task: ''
+  # 是否启动定时ping所有机器状态的定时任务
+  node-ping-cron-task: '0 */5 * * * *'
+
 
 logs:
   # 日志等级(-1:Debug, 0:Info, -1<=level<=5, 参照zap.level源码)

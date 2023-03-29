@@ -13,11 +13,12 @@ type Service struct {
 	Address     string `json:"address"`
 	Port        int    `json:"port"`
 	Status      string `json:"status"`
+	ServerOs    string `json:"serverOs"`
 }
 
 type Registry struct {
 	Addr         string
-	Agent        *consulapi.Agent
+	Client       *consulapi.Client
 	StatusChan   chan *Service
 	ShutdownChan chan string
 	watchers     map[string]*watch.Plan
@@ -32,7 +33,7 @@ func NewRegistry(addr string) (*Registry, error) {
 	}
 	return &Registry{
 		Addr:         addr,
-		Agent:        c.Agent(),
+		Client:       c,
 		StatusChan:   make(chan *Service),
 		ShutdownChan: make(chan string),
 		watchers:     make(map[string]*watch.Plan),
@@ -93,12 +94,21 @@ func (r *Registry) getSingleSvcHandler() Handler {
 	return func(_ uint64, data any) {
 		if d, ok := data.([]*consulapi.ServiceEntry); ok {
 			for _, entry := range d {
+				serviceAddr := entry.Service.Address
 				svc := &Service{
 					ServiceID:   entry.Service.ID,
 					ServiceName: entry.Service.Service,
-					Address:     entry.Service.Address,
+					Address:     serviceAddr,
 					Port:        entry.Service.Port,
 					Status:      entry.Checks.AggregatedStatus(),
+				}
+				// get os info from KV.
+				p, _, err := r.Client.KV().Get(serviceAddr, nil)
+				if err != nil {
+					global.Log.Errorf("get PV Key [%s] value failed: %v", serviceAddr, err)
+				}
+				if p != nil {
+					svc.ServerOs = string(p.Value)
 				}
 				global.Log.Infof("服务%s的状态变化：%s", entry.Service.Service, entry.Checks.AggregatedStatus())
 				r.StatusChan <- svc

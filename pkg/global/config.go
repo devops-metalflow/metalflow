@@ -32,6 +32,7 @@ type SystemConfiguration struct {
 	OperationLogAllowedToDelete bool     `mapstructure:"operation-log-allowed-to-delete" json:"operationLogAllowedToDelete"`
 	IdempotenceTokenName        string   `mapstructure:"idempotence-token-name" json:"idempotenceTokenName"`
 	NodeMetricsCronTask         string   `mapstructure:"node-metrics-cron-task" json:"nodeMetricsCronTask"`
+	NodePingCronTask            string   `mapstructure:"node-ping-cron-task" json:"nodePingCronTask"`
 }
 
 type LogsConfiguration struct {

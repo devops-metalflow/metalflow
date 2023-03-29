@@ -107,7 +107,7 @@ func TestCreateNode(t *testing.T) {
 			name:  "success",
 			s:     &s,
 			url:   "/node/create",
-			param: `{"address": "10.34.23.57", "sshPort":22, "labelIds": [1]}`,
+			param: `{"address": "10.34.23.57", "sshPort":22, "os": "linux", "labelIds": [1]}`,
 			invoke: func() {
 				mock.ExpectQuery("SELECT (.*) FROM `tb_sys_node`").WithArgs("10.34.23.57").
 					WillReturnRows(sqlmock.NewRows([]string{"id"}))

@@ -67,6 +67,7 @@ func (s *MysqlService) CreateNode(req *request.CreateNodeRequestStruct) error {
 		node := models.SysNode{
 			Address:     req.Address,
 			SshPort:     req.SshPort,
+			Os:          req.Os,
 			Asset:       req.Asset,
 			Health:      req.Health,
 			Performance: req.Performance,

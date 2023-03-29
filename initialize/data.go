@@ -2,6 +2,7 @@ package initialize
 
 import (
 	"errors"
+	"gorm.io/datatypes"
 	"metalflow/models"
 	"metalflow/pkg/global"
 	"metalflow/pkg/service"
@@ -794,12 +795,16 @@ func Data() { //nolint:gocyclo
 			Desc:       "用于获取机器节点的metrics信息",
 			Port:       19091,
 			AutoDeploy: &autoDeploy,
-			DeployCmd: "curl -k -uadmin:123456 -L" +
+			DeployCmd: datatypes.JSON("{\n    \"linux\": {\n        \"download\": \"curl -k " +
+				"-uadmin:123456 -L" +
 				" https://example/factory/devops-metalflow/metalmetrics/metalmetrics.sh" +
-				" -o metalmetrics.sh; chmod +x metalmetrics.sh",
-			ReloadCmd:  `./metalmetrics.sh reload`,
-			StopCmd:    `./metalmetrics.sh stop`,
-			StartCmd:   `./metalmetrics.sh start`,
+				" -o metalmetrics.sh; chmod +x metalmetrics.sh\",\n" +
+				"        \"start\": \"./metalmetrics.sh start\",\n        \"stop\": \"./metalmetrics.sh stop\"\n    }," +
+				"\n    \"windows\": {\n        \"download\": \"curl -k " +
+				"-uadmin:123456 -L " +
+				"https://example/factory/devops-metalflow/metalmetrics/metalmetrics.exe.bat" +
+				" -o metalmetrics.exe.bat\",\n        \"start\": \".\\\\metalmetrics.exe.bat\",\n        \"stop\": \"\"\n    }\n}"),
+
 			ServiceReq: "metalmetrics/metrics",
 			CheckReq:   "metalmetrics/version",
 		},
@@ -808,36 +813,25 @@ func Data() { //nolint:gocyclo
 			Desc:       "用于接收远程文件并执行",
 			Port:       19092,
 			AutoDeploy: &autoDeploy,
-			DeployCmd: "curl -k -uadmin:123456 -L" +
-				" https://example/factory/devops-metalflow/metalmetrics/metalmetrics.sh" +
-				" -o metaltask.sh; chmod +x metaltask.sh",
-			ReloadCmd: `./metaltask.sh reload`,
-			StopCmd:   `./metaltask.sh stop`,
-			StartCmd:  `./metaltask.sh start`,
+			DeployCmd: datatypes.JSON("{\n    \"linux\": {\n        \"download\": \"curl -k " +
+				"-uadmin:123456 -L " +
+				"https://example/factory/devops-metalflow/metaltask/metaltask.sh -o " +
+				"metaltask.sh; chmod +x metaltask.sh\",\n        \"start\": \"./metaltask.sh start\",\n        " +
+				"\"stop\": \"./metaltask.sh stop\"\n    },\n    \"windows\": {\n        \"download\": \"curl -k " +
+				"-uadmin:123456 -L " +
+				"https://example/factory/devops-metalflow/metaltask/metaltask.exe.bat" +
+				" -o metaltask.exe.bat\",\n        \"start\": \".\\\\metaltask.exe.bat\",\n        \"stop\": \"\"\n    }\n}"),
+			CheckReq: "metaltask/version",
 		},
 		{
-			Name:       "metalsecure",
-			Desc:       "用于获取机器节点的安全报告",
-			Port:       19094,
-			AutoDeploy: &autoDeploy,
-			DeployCmd: "curl -k -uadmin:123456 -L -L" +
-				" https://example/factory/devops-metalflow/metalmetrics/metalmetrics.sh" +
-				" -o metalsecure.sh; chmod +x metalsecure.sh",
-			ReloadCmd: `./metalsecure.sh reload`,
-			StopCmd:   `./metalsecure.sh stop`,
-			StartCmd:  `./metalsecure.sh start`,
+			Name: "metalsecure",
+			Desc: "用于获取机器节点的安全报告",
+			Port: 19094,
 		},
 		{
-			Name:       "metaltune",
-			Desc:       "用于对机器节点进行调优",
-			Port:       19093,
-			AutoDeploy: &autoDeploy,
-			DeployCmd: "curl -k -uadmin:123456 -L" +
-				" https://example/factory/devops-metalflow/metalmetrics/metalmetrics.sh" +
-				" -o metaltune.sh; chmod +x metaltune.sh",
-			ReloadCmd: `./metaltune.sh reload`,
-			StopCmd:   `./metaltune.sh stop`,
-			StartCmd:  `./metaltune.sh start`,
+			Name: "metaltune",
+			Desc: "用于对机器节点进行调优",
+			Port: 19093,
 		},
 	}
 	newWorkers := make([]*models.SysWorker, 0)

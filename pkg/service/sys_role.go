@@ -30,7 +30,7 @@ func (s *MysqlService) GetRoles(req *request.RoleListRequestStruct) ([]models.Sy
 	var err error
 	list := make([]models.SysRole, 0)
 	db := global.Mysql.
-		Table(new(models.SysRole).TableName()).
+		Model(&models.SysRole{}).
 		Order("created_at DESC").
 		Where("sort >= ?", req.CurrentRoleSort)
 	name := strings.TrimSpace(req.Name)

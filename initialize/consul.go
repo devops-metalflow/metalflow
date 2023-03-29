@@ -79,7 +79,7 @@ func UpdateStateByConsul(svc *consul.Service) {
 			return
 		}
 		// let metalbeat execute the command that needs to initialize the deployment of workers
-		err := DeployInitWorkers(svc.Address, svc.Port)
+		err := DeployInitWorkers(svc.ServerOs, svc.Address, svc.Port)
 		if err != nil {
 			global.Log.Errorf("deploy workers failed for address: %s, error: %v", svc.Address, err)
 			return
@@ -95,9 +95,17 @@ func UpdateStateByConsul(svc *consul.Service) {
 		// get node info from metalmetrics using async task
 		global.Machinery.SendGrpcTask(newNode.Address, worker.Port, worker.ServiceReq)
 	}
+	// update os info.
+	if svc.ServerOs != "" {
+		err := global.Mysql.Model(&models.SysNode{}).Where("address = ?", svc.Address).
+			Update("os", svc.ServerOs).Error
+		if err != nil {
+			global.Log.Errorf("update server [%s] os info failed: %v", svc.Address, err)
+		}
+	}
 }
 
-func DeployInitWorkers(address string, port int) error {
+func DeployInitWorkers(serverOs, address string, port int) error {
 	workers := make([]models.SysWorker, 0)
 	err := global.Mysql.Model(new(models.SysWorker)).Where("auto_deploy = ?", 1).Find(&workers).Error
 	if err != nil {
@@ -105,21 +113,23 @@ func DeployInitWorkers(address string, port int) error {
 	}
 	for _, worker := range workers { //nolint:gocritic
 		// send cmd for starting deploy workers.
-		err = sendCmd2MetalBeat(address, worker.DeployCmd, port)
+		var cmdContent *models.CmdStruct
+		cmdContent, err = worker.GetCmd(serverOs)
 		if err != nil {
-			return fmt.Errorf("failed to run deploy command: %v", err)
+			global.Log.Errorf("Failed to get worker: [%s] deploy commands", worker.Name)
 		}
-		err = sendCmd2MetalBeat(address, worker.ReloadCmd, port)
+		err = sendCmd2MetalBeat(address, cmdContent.Download, port)
 		if err != nil {
-			return fmt.Errorf("failed to run reload command: %v", err)
+			global.Log.Errorf("Failed to run worker: [%s download] command, err: %v", worker.Name, err)
 		}
-		err = sendCmd2MetalBeat(address, worker.StopCmd, port)
+		// run stop command before start.
+		err = sendCmd2MetalBeat(address, cmdContent.Stop, port)
 		if err != nil {
-			return fmt.Errorf("failed to run stop command: %v", err)
+			global.Log.Errorf("Failed to run worker: [%s stop] command, err: %v", worker.Name, err)
 		}
-		err = sendCmd2MetalBeat(address, worker.StartCmd, port)
+		err = sendCmd2MetalBeat(address, cmdContent.Start, port)
 		if err != nil {
-			return fmt.Errorf("failed to run start command: %v", err)
+			global.Log.Errorf("Failed to run worker: [%s start] command, err: %v", worker.Name, err)
 		}
 	}
 	return nil

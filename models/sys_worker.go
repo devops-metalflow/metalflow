@@ -1,25 +1,23 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
+	"gorm.io/datatypes"
 	"metalflow/pkg/global"
 )
 
 type SysWorker struct {
 	Model
-	Name       string     `json:"name" gorm:"comment:'worker名称';unique"`
-	Desc       string     `json:"desc" gorm:"comment:'worker描述'"`
-	Port       int        `json:"port" gorm:"comment:'worker暴露端口'"`
-	AutoDeploy *uint      `json:"autoDeploy" gorm:"type:tinyint(1);default:1;comment:'是否节点注册时部署'"`
-	DeployCmd  string     `json:"deployCmd" gorm:"comment:'部署命令'"`
-	StartCmd   string     `json:"startCmd" gorm:"comment:'启动命令'"`
-	StopCmd    string     `json:"stopCmd" gorm:"comment:'停止命令'"`
-	ReloadCmd  string     `json:"reloadCmd" gorm:"comment:'重新加载命令'"`
-	DeleteCmd  string     `json:"deleteCmd" gorm:"comment:'删除命令'"`
-	ServiceReq string     `json:"serviceReq" gorm:"comment:'grpc请求体'"`
-	CheckReq   string     `json:"checkReq" gorm:"comment:'worker状态检查请求体'"`
-	Creator    string     `json:"creator" gorm:"comment:'创建人'"`
-	Nodes      []*SysNode `json:"nodes" gorm:"many2many:sys_node_worker_relation"`
+	Name       string         `json:"name" gorm:"comment:'worker名称';unique"`
+	Desc       string         `json:"desc" gorm:"comment:'worker描述'"`
+	Port       int            `json:"port" gorm:"comment:'worker暴露端口'"`
+	AutoDeploy *uint          `json:"autoDeploy" gorm:"type:tinyint(1);default:0;comment:'是否节点注册时部署'"`
+	DeployCmd  datatypes.JSON `json:"deployCmd" gorm:"comment:'部署命令'"`
+	ServiceReq string         `json:"serviceReq" gorm:"comment:'grpc请求体'"`
+	CheckReq   string         `json:"checkReq" gorm:"comment:'worker状态检查请求体'"`
+	Creator    string         `json:"creator" gorm:"comment:'创建人'"`
+	Nodes      []*SysNode     `json:"nodes" gorm:"many2many:sys_node_worker_relation"`
 }
 
 func (m *SysWorker) TableName() string {
@@ -34,4 +32,20 @@ type RelationNodeWorker struct {
 
 func (m RelationNodeWorker) TableName() string {
 	return fmt.Sprintf("%s_%s", global.Conf.Mysql.TablePrefix, "sys_node_worker_relation")
+}
+
+type CmdStruct struct {
+	Download string `json:"download,omitempty"`
+	Start    string `json:"start,omitempty"`
+	Stop     string `json:"stop,omitempty"`
+}
+
+func (m *SysWorker) GetCmd(os string) (*CmdStruct, error) {
+	var osDeployCmd map[string]*CmdStruct
+	err := json.Unmarshal([]byte(m.DeployCmd.String()), &osDeployCmd)
+	if err != nil {
+		return nil, err
+	}
+	cmd := osDeployCmd[os]
+	return cmd, nil
 }

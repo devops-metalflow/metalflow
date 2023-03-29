@@ -12,12 +12,14 @@ const (
 type SysNode struct {
 	Model
 	Address         string         `gorm:"unique;comment:'主机地址(ip)'" json:"address"`
+	Os              string         `gorm:"comment:'操作系统'" json:"os"`
 	SshPort         uint           `gorm:"comment:'ssh端口号';default:22" json:"sshPort"`
 	ServicePort     int            `gorm:"comment:'注册的服务的端口';default:19090" json:"servicePort"`
 	Asset           string         `gorm:"comment:'资产编号'" json:"asset"`
 	Manager         string         `gorm:"comment:'责任人'" json:"manager"`
 	Health          *uint          `gorm:"type:tinyint(1);comment:'健康度(0:运行中 1:异常 2:已停机)';default:0" json:"health"`
 	Performance     *uint          `gorm:"type:tinyint(1);comment:'性能(0:高 1:中 2:低)';default:0" json:"performance"`
+	PingStat        *uint          `gorm:"type:tinyint(1);comment:'ping状态'" json:"pingStat"`
 	Region          string         `gorm:"comment:'地域'" json:"region"`
 	Remark          string         `gorm:"comment:'说明'" json:"remark"`
 	Creator         string         `gorm:"comment:'创建人'" json:"creator"`

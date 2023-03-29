@@ -14,6 +14,7 @@ type NodeListResponseStruct struct {
 	SshPort     int               `json:"sshPort"`
 	Asset       string            `json:"asset"`
 	Health      *uint             `json:"health"`
+	PingStat    *uint             `json:"pingStat"`
 	Performance *uint             `json:"performance"`
 	Region      string            `json:"region"`
 	Remark      string            `json:"remark"`

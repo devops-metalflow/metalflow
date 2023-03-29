@@ -1,10 +1,12 @@
 package initialize
 
 import (
+	probing "github.com/prometheus-community/pro-bing"
 	"metalflow/models"
 	"metalflow/pkg/cron"
 	"metalflow/pkg/global"
 	"metalflow/pkg/service"
+	"sync"
 	"time"
 )
 
@@ -35,6 +37,7 @@ func Cron() {
 	// 添加初始启动时的定时任务并运行
 	go func(c *cron.Client) {
 		addRefreshNodeMetricsTask(c)
+		addRefreshNodePingStatsTask(c)
 		addShutStartNodeTask(c)
 		err := c.DoInitJobs()
 		if err != nil {
@@ -122,4 +125,88 @@ func addShutStartNodeTask(c *cron.Client) {
 			Handler: jobNodes.RunShutTask,
 		}
 	}
+}
+
+// Add cron ping servers task
+const refreshNodePingStatsName = "refresh.node.ping.1m"
+
+func addRefreshNodePingStatsTask(c *cron.Client) {
+	if global.Conf.System.NodePingCronTask != "" {
+		c.InitJobs[refreshNodePingStatsName] = &cron.InitJob{
+			Spec:    global.Conf.System.NodePingCronTask,
+			Handler: DoPingIps,
+		}
+		global.Log.Infof("Enable refresh ping status scheduled task [%s] successfully", global.Conf.System.NodePingCronTask)
+	}
+}
+
+type ServerStats struct {
+	Ip     string
+	Status bool
+}
+
+func DoPingIps() {
+	nodes := make([]*models.SysNode, 0)
+	err := global.Mysql.Model(&models.SysNode{}).Find(&nodes).Error
+	if err != nil {
+		global.Log.Errorf("search nodes failed: %v", err)
+		return
+	}
+
+	wg := sync.WaitGroup{}
+	serverStatsChan := make(chan ServerStats)
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(addr string) {
+			defer wg.Done()
+			stat, msg := ping(addr)
+			global.Log.Infof("Ping %s %s(%v)\n", addr, msg, stat)
+			serverStat := ServerStats{
+				Ip:     addr,
+				Status: stat,
+			}
+			serverStatsChan <- serverStat
+		}(node.Address)
+	}
+	go func() {
+		wg.Wait()
+		close(serverStatsChan)
+	}()
+
+	for s := range serverStatsChan {
+		// update server ping stat in database
+		var p uint
+		if s.Status {
+			p = 1
+		}
+		err = global.Mysql.Model(&models.SysNode{}).Where("address = ?", s.Ip).Update("ping_stat", p).Error
+		if err != nil {
+			global.Log.Errorf("Update %s ping stat failed: %v", s.Ip, err)
+		}
+	}
+}
+
+func ping(ip string) (result bool, message string) {
+	pinger, err := probing.NewPinger(ip)
+	if err != nil {
+		return false, err.Error()
+	}
+	// ping timeout
+	pinger.Timeout = 10 * time.Second
+	pinger.Count = 3
+	pinger.SetPrivileged(true)
+	err = pinger.Run()
+	if err != nil {
+		return false, err.Error()
+	}
+	stats := pinger.Statistics()
+
+	result = true
+	message = "Succeeded!"
+	// check packets loss rate, if it is greater than 20%, return false
+	if stats.PacketLoss > 20 { // nolint:gomnd
+		result = false
+		message = "Failed!"
+	}
+	return result, message
 }
