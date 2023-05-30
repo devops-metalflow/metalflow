@@ -83,8 +83,13 @@ func GetSshClient(config *SshConfig) (*ssh.Client, error) {
 func IsSafetyCmd(cmd string) error {
 	// 避免rm * 或 rm /*等命令直接出现, 删除命令指定全路径
 	c := path.Clean(strings.ToLower(cmd))
-	if strings.Contains(c, "rm") {
-		if len(strings.Split(c, "/")) <= 1 {
+	// List of dangerous command patterns to exclude
+	dangerousPatterns := []string{
+		"rm /",
+		"rm -rf /",
+	}
+	for _, pattern := range dangerousPatterns {
+		if strings.HasPrefix(c, pattern) && len(strings.Split(c, "/")) <= 2 {
 			return fmt.Errorf("rm命令%s不能删除小于2级目录的文件", cmd)
 		}
 	}
