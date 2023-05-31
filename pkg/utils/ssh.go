@@ -82,7 +82,7 @@ func GetSshClient(config *SshConfig) (*ssh.Client, error) {
 // IsSafetyCmd 判断命令是否运行的安全命令
 func IsSafetyCmd(cmd string) error {
 	// 避免rm * 或 rm /*等命令直接出现, 删除命令指定全路径
-	c := path.Clean(strings.ToLower(cmd))
+	c := strings.ToLower(cmd)
 	// List of dangerous command patterns to exclude
 	dangerousPatterns := []string{
 		"rm /",
