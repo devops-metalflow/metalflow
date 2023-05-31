@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"net"
-	"path"
 	"strings"
 	"time"
 )
