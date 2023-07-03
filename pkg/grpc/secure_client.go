@@ -227,12 +227,12 @@ func GetRiskCount(address string, port int) (uint, error) {
 	return dockerRiskCount + bareRiskCount, nil
 }
 
-func GetSecureScore(address string, port int) (score uint, err error) {
+func GetSecureScore(address string, port int) (uint, error) {
 	// 默认分数为满分
 	const initScore = 100
 	dockerSbom, dockerVul, bareSbom, bareVul, err := getAllSecureInfo(address, port)
 	if err != nil {
-		return
+		return 0, err
 	}
 	// 根据公式计算安全分数
 	var (
@@ -244,30 +244,30 @@ func GetSecureScore(address string, port int) (score uint, err error) {
 	if dockerSbom != "" {
 		dockerSbomScore, err = countLicense(dockerSbom)
 		if err != nil {
-			return
+			return 0, err
 		}
 	}
 	if bareSbom != "" {
 		bareSbomScore, err = countLicense(bareSbom)
 		if err != nil {
-			return
+			return 0, err
 		}
 	}
 	if dockerVul != "" {
 		dockerVulScore, err = countSeverity(dockerVul)
 		if err != nil {
-			return
+			return 0, err
 		}
 	}
 	if bareVul != "" {
 		bareVulScore, err = countSeverity(bareVul)
 		if err != nil {
-			return
+			return 0, err
 		}
 	}
 
 	// 计算分数
-	score = uint(initScore - (float64(bareSbomScore+dockerSbomScore)*0.25 + float64(bareVulScore+dockerVulScore)*0.75))
+	score := uint(initScore - (float64(bareSbomScore+dockerSbomScore)*0.25 + float64(bareVulScore+dockerVulScore)*0.75))
 	return score, nil
 }
 

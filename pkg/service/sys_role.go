@@ -88,8 +88,11 @@ func (s *MysqlService) UpdateRoleMenusById(currentRole *models.SysRole, id uint,
 }
 
 // UpdateRoleApisById 更新角色的权限接口
-func (s *MysqlService) UpdateRoleApisById(id uint, req request.UpdateIncrementalIdsRequestStruct) (err error) {
-	var oldRole models.SysRole
+func (s *MysqlService) UpdateRoleApisById(id uint, req request.UpdateIncrementalIdsRequestStruct) error {
+	var (
+		oldRole models.SysRole
+		err     error
+	)
 	query := s.TX.Model(&oldRole).Where("id = ?", id).First(&oldRole)
 	if query.Error == gorm.ErrRecordNotFound {
 		return query.Error
@@ -99,7 +102,7 @@ func (s *MysqlService) UpdateRoleApisById(id uint, req request.UpdateIncremental
 		deleteApis := make([]*models.SysApi, 0)
 		err = s.TX.Where("id IN (?)", req.Delete).Find(&deleteApis).Error
 		if err != nil {
-			return
+			return err
 		}
 		// 构建casbin规则
 		cs := make([]models.SysRoleCasbin, 0)
@@ -118,7 +121,7 @@ func (s *MysqlService) UpdateRoleApisById(id uint, req request.UpdateIncremental
 		createApis := make([]*models.SysApi, 0)
 		err = s.TX.Where("id IN (?)", req.Create).Find(&createApis).Error
 		if err != nil {
-			return
+			return err
 		}
 		// 构建casbin规则
 		cs := make([]models.SysRoleCasbin, 0)

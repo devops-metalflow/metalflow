@@ -6,31 +6,31 @@ import (
 )
 
 // GetCountData 获取首页的统计数据
-func (s *MysqlService) GetCountData() (resp response.CountDataResponseStruct, err error) {
+func (s *MysqlService) GetCountData() (*response.CountDataResponseStruct, error) {
 	var userCount int64
-	err = s.TX.Model(new(models.SysUser)).Count(&userCount).Error
+	err := s.TX.Model(new(models.SysUser)).Count(&userCount).Error
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	var nodeCount int64
 	err = s.TX.Model(new(models.SysNode)).Count(&nodeCount).Error
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	var normalNodeCount int64
 	err = s.TX.Model(new(models.SysNode)).Where("health = ?", 0).Count(&normalNodeCount).Error
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	var highPerformanceNodeCount int64
 	err = s.TX.Model(new(models.SysNode)).Where("performance = ?", 0).Count(&highPerformanceNodeCount).Error
 	if err != nil {
-		return
+		return nil, err
 	}
-	resp = response.CountDataResponseStruct{
+	resp := &response.CountDataResponseStruct{
 		UserCount:                userCount,
 		NodeCount:                nodeCount,
 		NormalNodeCount:          normalNodeCount,

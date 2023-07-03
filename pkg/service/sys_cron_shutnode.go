@@ -80,7 +80,7 @@ func (s *MysqlService) GetCronShutNode(req *request.ListCronShutNodeRequest) ([]
 	return list, err
 }
 
-func (s *MysqlService) UpdateCronShutNodeById(shutId uint, req *request.UpdateCronShutNodeRequest) (err error) {
+func (s *MysqlService) UpdateCronShutNodeById(shutId uint, req *request.UpdateCronShutNodeRequest) error {
 	// 更新定时开关机任务
 	var csn models.SysCronShutNode
 	query := s.TX.Where("id = ?", shutId).First(&csn)
@@ -88,9 +88,9 @@ func (s *MysqlService) UpdateCronShutNodeById(shutId uint, req *request.UpdateCr
 		return fmt.Errorf("record does not exist, update failed")
 	}
 	nodes := make([]*models.SysNode, 0)
-	err = s.TX.Where("id in (?)", req.NodeIds).Find(&nodes).Error
+	err := s.TX.Where("id in (?)", req.NodeIds).Find(&nodes).Error
 	if err != nil {
-		return
+		return err
 	}
 
 	// 根据机器状态判断是否需要停用

@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/stretchr/testify/assert"
-	tests2 "metalflow/tests"
+	tests2 "metalflow/tests" //nolint:depguard
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,9 +25,9 @@ func TestPing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// mock一个http请求
 			req := httptest.NewRequest(
-				"GET",   // 请求方法
-				"/ping", // 请求URL
-				nil,     // 请求参数
+				"GET",       // 请求方法
+				"/ping",     // 请求URL
+				http.NoBody, // 请求参数
 			)
 			// mock一个响应记录器
 			w := httptest.NewRecorder()

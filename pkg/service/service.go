@@ -1,4 +1,4 @@
-package service
+package service //nolint:gofmt
 
 import (
 	"errors"
@@ -86,14 +86,18 @@ func (s *MysqlService) DeleteByIds(ids []uint, model any) (err error) {
 // Find 查询, model需使用指针, 否则可能无法绑定数据
 //
 //nolint:gocyclo
-func (s *MysqlService) Find(query *gorm.DB, page *response.PageInfo, model any) (err error) { //nolint:gocyclo
+func (s *MysqlService) Find(query *gorm.DB, page *response.PageInfo, model any) error { //nolint:gocyclo
 	// 获取model值
 	rv := reflect.ValueOf(model)
 	if rv.Kind() != reflect.Ptr || (rv.IsNil() || rv.Elem().Kind() != reflect.Slice) {
 		return fmt.Errorf("model must be a pointer")
 	}
 
-	countCache := false
+	var (
+		countCache bool
+		err        error
+	)
+
 	if page.CountCache != nil {
 		countCache = *page.CountCache
 	}
@@ -131,7 +135,7 @@ func (s *MysqlService) Find(query *gorm.DB, page *response.PageInfo, model any) 
 				if query.Statement.Model != nil {
 					err = query.Statement.Parse(query.Statement.Model)
 					if err != nil {
-						return
+						return err
 					}
 				}
 				err = query.Joins(
