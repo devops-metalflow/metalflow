@@ -1,4 +1,4 @@
-package vncproxy
+package vncproxy //nolint:gofmt
 
 import (
 	"bytes"
@@ -18,6 +18,8 @@ const (
 	RfbVersion     = 3.8
 	AuthStatusFail = '\x00'
 	AuthStatusPass = '\x02'
+	alert          = "Security proxying requires RFB protocol version 3.8 , but tenant asked for "
+	errAlert       = "negotiation failed: "
 )
 
 type AuthType = int
@@ -43,7 +45,7 @@ func Connect(addr string, source, target net.Conn) (net.Conn, error) {
 	}
 	tv := parseVersion(targetVersion)
 	if tv != RfbVersion {
-		return nil, errors.New("Security proxying requires RFB protocol version 3.8 , but tenant asked for " + string(targetVersion))
+		return nil, errors.New(alert + string(targetVersion))
 	}
 	_, err = target.Write(targetVersion)
 	if err != nil {
@@ -59,14 +61,14 @@ func Connect(addr string, source, target net.Conn) (net.Conn, error) {
 	}
 	v := parseVersion(sourceVersion)
 	if v != RfbVersion {
-		return nil, errors.New("Security proxying requires RFB protocol version 3.8 , but tenant asked for " + string(sourceVersion))
+		return nil, errors.New(alert + string(sourceVersion))
 	}
 	authType, err := readCon(target, 1)
 	if err != nil {
 		return nil, err
 	}
 	if byte2int(authType) == 0 {
-		return nil, errors.New("negotiation failed: " + string(authType))
+		return nil, errors.New(errAlert + string(authType))
 	}
 	f, err := readCon(target, byte2int(authType))
 	if err != nil {
@@ -83,7 +85,7 @@ func Connect(addr string, source, target net.Conn) (net.Conn, error) {
 	}
 	clientAuth, _ := readCon(source, 1)
 	if byte2int(clientAuth) != None {
-		return nil, errors.New("negotiation failed: " + string(clientAuth))
+		return nil, errors.New(errAlert + string(clientAuth))
 	}
 	if permittedAuthType[0] != VenEncrypt {
 		return nil, errors.New("is not VenEncrypt conn")
@@ -113,7 +115,7 @@ func checkIsEncrypt(addr string) (bool, error) {
 	}
 	tv := parseVersion(targetVersion)
 	if tv != RfbVersion {
-		return false, errors.New("Security proxying requires RFB protocol version 3.8 , but tenant asked for " + string(targetVersion))
+		return false, errors.New(alert + string(targetVersion))
 	}
 	_, err = target.Write(targetVersion)
 	if err != nil {
@@ -168,9 +170,9 @@ func byte2int(data []byte) int {
 
 func securityHandshake(target net.Conn) (net.Conn, error) {
 	maj, _ := readCon(target, 1)
-	min, _ := readCon(target, 1)
+	con, _ := readCon(target, 1)
 	majVer := byte2int(maj)
-	minVer := byte2int(min)
+	minVer := byte2int(con)
 	global.Log.Infof("Server sent VeNCrypt version %v.%v", majVer, minVer)
 	if majVer != 0 || minVer != 2 {
 		return nil, fmt.Errorf("only VeNCrypt version 0.2 is supported by this proxy, "+

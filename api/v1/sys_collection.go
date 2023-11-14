@@ -1,17 +1,19 @@
 package v1
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"metalflow/models"
 	"metalflow/pkg/global"
 	"metalflow/pkg/request"
 	"metalflow/pkg/response"
+	"metalflow/pkg/utils"
 )
 
-// GetMyCollections queries my favorite machines.
+// GetMyCollections 查询我的收藏机器节点信息
 func GetMyCollections(c *gin.Context) {
 	user := GetCurrentUser(c)
-	// obtain all machine node information collected by current user.
+	// 获取工号收藏的所有机器节点信息
 	collections := make([]models.SysCollection, 0)
 	err := global.Mysql.Model(&models.SysCollection{}).Where("username = ?", user.Username).Find(&collections).Error
 	if err != nil {
@@ -19,28 +21,32 @@ func GetMyCollections(c *gin.Context) {
 		return
 	}
 
-	// get all nodeIds of collection.
-	nodeIds := make([]uint, 0)
+	// 获取收藏的所有nodeIds
+	responses := make([]response.CollectionNodeItem, 0)
 	for _, c := range collections {
-		nodeIds = append(nodeIds, c.NodeId)
+		var node models.SysNode
+		err = global.Mysql.Model(&models.SysNode{}).Where("id = ?", c.NodeId).First(&node).Error
+		if err != nil {
+			global.Log.Errorf("数据库查找服务器%d失败：%v", c.NodeId, err)
+			continue
+		}
+		item := response.CollectionNodeItem{
+			CollectionId: c.Id,
+			Description:  c.Description,
+			SysNode:      node,
+		}
+		responses = append(responses, item)
 	}
 
-	collectNodes := make([]models.SysNode, 0)
-	err = global.Mysql.Model(&models.SysNode{}).Where("id in (?)", nodeIds).Find(&collectNodes).Error
-	if err != nil {
-		response.FailWithMsg(err.Error())
-		return
-	}
-	response.SuccessWithData(collectNodes)
+	response.SuccessWithData(responses)
 }
 
-// CreateCollection used to favorite a node.
 func CreateCollection(c *gin.Context) {
-	// bind request body to struct.
+	// 绑定参数
 	var req request.CollectRequest
 	err := c.ShouldBind(&req)
 	if err != nil {
-		response.FailWithMsg("params binding failed, please check the data type")
+		response.FailWithMsg("参数绑定失败, 请检查数据类型")
 		return
 	}
 	user := GetCurrentUser(c)
@@ -48,11 +54,11 @@ func CreateCollection(c *gin.Context) {
 		Username: user.Username,
 		NodeId:   req.NodeId,
 	}
-	// check for duplicate favorites.
+	// 检查是否重复收藏
 	err = global.Mysql.Model(&models.SysCollection{}).
-		Where(" username = ? and node_id = ?", user.Username, req.NodeId).First(new(models.SysCollection)).Error
+		Where(" username = ? AND node_id = ?", user.Username, req.NodeId).First(new(models.SysCollection)).Error
 	if err == nil {
-		response.FailWithMsg("you don't need to repeat favorites~")
+		response.FailWithMsg("无需重复收藏~")
 		return
 	}
 	err = global.Mysql.Model(&models.SysCollection{}).Create(collect).Error
@@ -63,16 +69,41 @@ func CreateCollection(c *gin.Context) {
 	response.Success()
 }
 
-// DeleteCollectByNodeId for canceling favorites.
+func UpdateDescriptionById(c *gin.Context) {
+	// 绑定参数
+	var req request.UpdateDescRequest
+	err := c.ShouldBind(&req)
+	if err != nil {
+		response.FailWithMsg("参数绑定失败, 请检查数据类型")
+		return
+	}
+
+	// 获取path中的collectionId
+	collectionId := utils.Str2Uint(c.Param("collectionId"))
+	if collectionId == 0 {
+		response.FailWithMsg("收藏Id不正确")
+		return
+	}
+	err = global.Mysql.Model(&models.SysCollection{}).Where("id = ?", collectionId).
+		Update("description", req.Description).Error
+	if err != nil {
+		response.FailWithMsg(fmt.Sprintf("更新机器描述信息失败：%s", err.Error()))
+	}
+	response.Success()
+}
+
 func DeleteCollectByNodeId(c *gin.Context) {
-	// bind request body to struct.
+	// 绑定参数
 	var req request.CollectRequest
 	err := c.ShouldBind(&req)
 	if err != nil {
-		response.FailWithMsg("params binding failed, please check the data type")
+		response.FailWithMsg("参数绑定失败, 请检查数据类型")
 		return
 	}
-	err = global.Mysql.Model(&models.SysCollection{}).Where("node_id = ?", req.NodeId).Delete(&models.SysCollection{}).Error
+
+	user := GetCurrentUser(c)
+	err = global.Mysql.Model(&models.SysCollection{}).Where("node_id = ? AND username = ?", req.NodeId, user.Username).
+		Delete(&models.SysCollection{}).Error
 	if err != nil {
 		response.FailWithMsg(err.Error())
 		return

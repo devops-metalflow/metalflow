@@ -12,6 +12,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	downloadCmd = "{\n    \"linux\": {\n        \"download\": \"curl -k "
+	userCmd     = "-uadmin:123456 -L "
+)
+
 var (
 	creator        = "系统自动创建"
 	status         = uint(1)
@@ -440,6 +445,12 @@ func Data() { //nolint:gocyclo
 			Desc:     "添加机器到我的收藏",
 		},
 		{
+			Method:   "PATCH",
+			Path:     "/v1/collect/update/:collectionId",
+			Category: "collection",
+			Desc:     "更新机器描述信息",
+		},
+		{
 			Method:   "DELETE",
 			Path:     "/v1/collect/delete/my",
 			Category: "collection",
@@ -795,13 +806,13 @@ func Data() { //nolint:gocyclo
 			Desc:       "用于获取机器节点的metrics信息",
 			Port:       19091,
 			AutoDeploy: &autoDeploy,
-			DeployCmd: datatypes.JSON("{\n    \"linux\": {\n        \"download\": \"curl -k " +
+			DeployCmd: datatypes.JSON(downloadCmd +
 				"-uadmin:123456 -L" +
 				" https://example/factory/devops-metalflow/metalmetrics/metalmetrics.sh" +
 				" -o metalmetrics.sh; chmod +x metalmetrics.sh\",\n" +
 				"        \"start\": \"./metalmetrics.sh start\",\n        \"stop\": \"./metalmetrics.sh stop\"\n    }," +
 				"\n    \"windows\": {\n        \"download\": \"curl -k " +
-				"-uadmin:123456 -L " +
+				userCmd +
 				"https://example/factory/devops-metalflow/metalmetrics/metalmetrics.exe.bat" +
 				" -o metalmetrics.exe.bat\",\n        \"start\": \".\\\\metalmetrics.exe.bat\",\n        \"stop\": \"\"\n    }\n}"),
 
@@ -813,12 +824,12 @@ func Data() { //nolint:gocyclo
 			Desc:       "用于接收远程文件并执行",
 			Port:       19092,
 			AutoDeploy: &autoDeploy,
-			DeployCmd: datatypes.JSON("{\n    \"linux\": {\n        \"download\": \"curl -k " +
-				"-uadmin:123456 -L " +
+			DeployCmd: datatypes.JSON(downloadCmd +
+				userCmd +
 				"https://example/factory/devops-metalflow/metaltask/metaltask.sh -o " +
 				"metaltask.sh; chmod +x metaltask.sh\",\n        \"start\": \"./metaltask.sh start\",\n        " +
 				"\"stop\": \"./metaltask.sh stop\"\n    },\n    \"windows\": {\n        \"download\": \"curl -k " +
-				"-uadmin:123456 -L " +
+				userCmd +
 				"https://example/factory/devops-metalflow/metaltask/metaltask.exe.bat" +
 				" -o metaltask.exe.bat\",\n        \"start\": \".\\\\metaltask.exe.bat\",\n        \"stop\": \"\"\n    }\n}"),
 			CheckReq: "metaltask/version",

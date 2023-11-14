@@ -9,6 +9,7 @@ require (
 	github.com/bndr/gojenkins v1.1.0
 	github.com/casbin/casbin/v2 v2.31.5
 	github.com/casbin/gorm-adapter/v3 v3.3.1
+	github.com/fatih/color v1.7.0
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-mail/mail v2.3.1+incompatible
 	github.com/go-playground/locales v0.13.0
@@ -98,6 +99,7 @@ require (
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
+	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect

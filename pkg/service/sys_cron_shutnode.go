@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/rfyiamcool/cronlib"
 	"gorm.io/gorm"
@@ -43,7 +44,7 @@ func (s *MysqlService) CreateCronShutNode(req *request.CreateCronShutNodeRequest
 			global.Log.Errorf("获取定时开机任务%s的model错误：%v", req.Name, err)
 		}
 		startJob := &cron.DynamicJob{
-			JobName: req.Keyword + ".start",
+			JobName: req.Keyword + startName,
 			Job:     startModel,
 		}
 		global.Cron.Start <- startJob
@@ -52,7 +53,7 @@ func (s *MysqlService) CreateCronShutNode(req *request.CreateCronShutNodeRequest
 			global.Log.Errorf("获取定时关机任务%s的model错误：%v", req.Name, err)
 		}
 		shutJob := &cron.DynamicJob{
-			JobName: req.Keyword + ".shut",
+			JobName: req.Keyword + shutName,
 			Job:     shutModel,
 		}
 		global.Cron.Start <- shutJob
@@ -84,7 +85,7 @@ func (s *MysqlService) UpdateCronShutNodeById(shutId uint, req *request.UpdateCr
 	// 更新定时开关机任务
 	var csn models.SysCronShutNode
 	query := s.TX.Where("id = ?", shutId).First(&csn)
-	if query.Error == gorm.ErrRecordNotFound {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("record does not exist, update failed")
 	}
 	nodes := make([]*models.SysNode, 0)
@@ -96,8 +97,8 @@ func (s *MysqlService) UpdateCronShutNodeById(shutId uint, req *request.UpdateCr
 	// 根据机器状态判断是否需要停用
 	if *csn.Status != uint(*req.Status) && uint(*req.Status) == models.SysCronShutNodeDisable {
 		// 停用当前的定时任务
-		stopShutJob := &cron.DynamicJob{JobName: csn.Keyword + ".shut"}
-		stopStartJob := &cron.DynamicJob{JobName: csn.Keyword + ".start"}
+		stopShutJob := &cron.DynamicJob{JobName: csn.Keyword + shutName}
+		stopStartJob := &cron.DynamicJob{JobName: csn.Keyword + startName}
 		global.Cron.Stop <- stopShutJob
 		global.Cron.Stop <- stopStartJob
 	} else {
@@ -109,7 +110,7 @@ func (s *MysqlService) UpdateCronShutNodeById(shutId uint, req *request.UpdateCr
 			global.Log.Errorf("获取定时开机任务%s的model错误：%v", req.Name, err)
 		}
 		startJob := &cron.DynamicJob{
-			JobName: csn.Keyword + ".start",
+			JobName: csn.Keyword + startName,
 			Job:     startModel,
 		}
 
@@ -118,7 +119,7 @@ func (s *MysqlService) UpdateCronShutNodeById(shutId uint, req *request.UpdateCr
 			global.Log.Errorf("获取定时关机任务%s的model错误：%v", req.Name, err)
 		}
 		shutJob := &cron.DynamicJob{
-			JobName: csn.Keyword + ".shut",
+			JobName: csn.Keyword + shutName,
 			Job:     shutModel,
 		}
 		global.Cron.Update <- startJob
@@ -155,8 +156,8 @@ func (s *MysqlService) DeleteCronShutTaskByIds(ids []uint) error {
 		if *shutNode.Status != models.SysCronShutNodeEnable {
 			continue
 		}
-		stopShutJob := &cron.DynamicJob{JobName: shutNode.Keyword + ".shut"}
-		stopStartJob := &cron.DynamicJob{JobName: shutNode.Keyword + ".start"}
+		stopShutJob := &cron.DynamicJob{JobName: shutNode.Keyword + shutName}
+		stopStartJob := &cron.DynamicJob{JobName: shutNode.Keyword + startName}
 		global.Cron.Stop <- stopShutJob
 		global.Cron.Stop <- stopStartJob
 	}
@@ -171,6 +172,8 @@ type JobNodes struct {
 const (
 	shutShellName  = "shut.sh"
 	startShellName = "start.sh"
+	shutName       = ".shut"
+	startName      = ".start"
 )
 
 type addressInfo struct {
