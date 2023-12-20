@@ -2,6 +2,7 @@ package service
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"io"
 	"metalflow/models"
@@ -22,6 +23,13 @@ func (s *MysqlService) GetNodes(req *request.NodeListRequestStruct) ([]models.Sy
 		Model(&models.SysNode{}).
 		Preload("Labels").
 		Order("created_at DESC")
+	// Eliminate machines that need to be hidden
+	hide := strings.TrimSpace(global.Conf.NodeConf.Hide)
+	if hide != "" {
+		hideNodes := strings.Split(hide, ",")
+		query = query.Where("address NOT IN (?)", hideNodes)
+	}
+
 	address := strings.TrimSpace(req.Address)
 	if address != "" {
 		query = query.Where("address LIKE ?", fmt.Sprintf("%%%s%%", address))
@@ -55,8 +63,19 @@ func (s *MysqlService) GetNodes(req *request.NodeListRequestStruct) ([]models.Sy
 }
 
 func (s *MysqlService) CreateNode(req *request.CreateNodeRequestStruct) error {
+	// Eliminate machines that need to be hidden
+	hide := strings.TrimSpace(global.Conf.NodeConf.Hide)
+	if hide != "" {
+		hideNodes := strings.Split(hide, ",")
+		for _, node := range hideNodes {
+			if req.Address == node {
+				return fmt.Errorf("for security reasons, address [%s] is not allowed", req.Address)
+			}
+		}
+	}
+
 	query := s.TX.Where("address = ?", req.Address).First(&models.SysNode{})
-	if query.Error == gorm.ErrRecordNotFound {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		labels := make([]models.SysLabel, 0)
 		if len(req.LabelIds) > 0 {
 			err := s.TX.Where("id in (?)", req.LabelIds).Find(&labels).Error
@@ -88,7 +107,7 @@ func (s *MysqlService) UpdateNodeById(nodeId uint, req *request.UpdateNodeReques
 	// 更新机器节点
 	var node models.SysNode
 	query := s.TX.Where("id = ?", nodeId).First(&node)
-	if query.Error == gorm.ErrRecordNotFound {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("record does not exist, update failed")
 	}
 	// 更新责任人
@@ -136,7 +155,7 @@ func (s *MysqlService) DeleteNodeByIds(ids []uint) error {
 func (s *MysqlService) RefreshNodeInfoById(id uint) error {
 	var node models.SysNode
 	query := s.TX.Where("id = ?", id).First(&node)
-	if query.Error == gorm.ErrRecordNotFound {
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("机器节点不存在")
 	}
 	// 判断本次刷新时间与上次刷新时间的间隔，如果小于5分钟，则不进行刷新

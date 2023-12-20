@@ -46,6 +46,7 @@ type LogsConfiguration struct {
 
 type NodeConfiguration struct {
 	AddrBind []NodeAddrConfiguration `mapstructure:"addr-bind" json:"addrBind"`
+	Hide     string                  `mapstructure:"hide" json:"hide"`
 }
 
 type NodeAddrConfiguration struct {
