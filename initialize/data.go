@@ -102,6 +102,7 @@ func Data() { //nolint:gocyclo
 					Title:     "远程连接",
 					Path:      "ssh",
 					Component: "/node/ssh/index",
+					Visible:   &invisible,
 				},
 				{
 					Name:      "My",
@@ -512,6 +513,12 @@ func Data() { //nolint:gocyclo
 		},
 		{
 			Method:   "POST",
+			Path:     "/v1/node/shell/file/upload",
+			Category: "node",
+			Desc:     "sftp上传文件到远程",
+		},
+		{
+			Method:   "POST",
 			Path:     "/v1/node/create",
 			Category: "node",
 			Desc:     "创建机器节点",
@@ -747,12 +754,10 @@ func Data() { //nolint:gocyclo
 	}
 	newApis := make([]models.SysApi, 0)
 	newRoleCasbins := make([]models.SysRoleCasbin, 0)
-	for i, api := range apis { //nolint:gocritic
-		id := uint(i + 1)
+	for _, api := range apis { //nolint:gocritic
 		oldApi := models.SysApi{}
-		err := global.Mysql.Where("id = ?", id).First(&oldApi).Error
+		err := global.Mysql.Where("method = ? AND path = ?", api.Method, api.Path).First(&oldApi).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			api.Id = id
 			api.Creator = creator
 			newApis = append(newApis, api)
 			// 超级管理员拥有所有API权限

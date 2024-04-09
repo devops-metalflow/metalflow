@@ -410,7 +410,7 @@ func GetSshDirInfo(c *gin.Context) {
 
 		for _, item := range tmp {
 			name := strings.TrimSpace(item)
-			if len(name) > 0 {
+			if name != "" {
 				dirs = append(dirs, name)
 			}
 		}
@@ -463,6 +463,46 @@ func GetSshFile(c *gin.Context) {
 		return
 	}
 	response.SuccessWithData(string(all))
+}
+
+// PutFile upload file to sftp server
+func PutFile(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		response.FailWithMsg("获取文件失败")
+		return
+	}
+	filename := c.PostForm("filename")
+	dirPath := c.PostForm("path")
+	sshId := c.PostForm("sshId")
+	fileContents, err := file.Open()
+	if err != nil {
+		response.FailWithMsg("获取文件内容失败")
+		return
+	}
+	defer fileContents.Close()
+
+	clients.lock.RLock()
+	cli, ok := clients.data[sshId]
+	clients.lock.RUnlock()
+	if !ok {
+		response.FailWithMsg("无法找到连接的ssh实例")
+		return
+	}
+	remoteFilePath := strings.TrimSuffix(dirPath, "/") + "/" + filename
+	remoteFile, err := cli.sftpClient.Create(remoteFilePath)
+	if err != nil {
+		response.FailWithMsg("创建文件失败")
+		return
+	}
+	defer remoteFile.Close()
+
+	_, err = io.Copy(remoteFile, fileContents)
+	if err != nil {
+		response.FailWithMsg("写入文件内容失败")
+		return
+	}
+	response.Success()
 }
 
 func DownloadFile(c *gin.Context) {
