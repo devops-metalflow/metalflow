@@ -21,6 +21,8 @@ var (
 	creator        = "系统自动创建"
 	status         = uint(1)
 	invisible      = uint(0)
+	onlyContent    = uint(1)
+	newTab         = uint(1)
 	noBreadcrumb   = uint(0)
 	autoDeploy     = uint(1)
 	sysRoleDevSort = uint(20) //nolint:gomnd    // 一般开发人员排序
@@ -97,12 +99,13 @@ func Data() { //nolint:gocyclo
 					Roles:     roles,
 				},
 				{
-					Name:      "Ssh",
-					Icon:      "terminal|svg",
-					Title:     "远程连接",
-					Path:      "ssh",
-					Component: "/node/ssh/index",
-					Visible:   &invisible,
+					Name:        "Ssh",
+					Icon:        "terminal|svg",
+					Title:       "远程连接",
+					Path:        "ssh",
+					Component:   "/node/ssh/index",
+					OnlyContent: &onlyContent,
+					NewTab:      &newTab,
 				},
 				{
 					Name:      "My",
