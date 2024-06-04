@@ -368,17 +368,13 @@ func GetSshDirInfo(c *gin.Context) {
 		response.FailWithMsg("无法找到连接的ssh实例")
 		return
 	}
-	if err != nil {
-		global.Log.Error("sftp client create failed： ", err)
-		return
-	}
 	fileInfos, err := cli.sftpClient.ReadDir(req.Path)
 	if err != nil {
 		global.Log.Error("sftp get files failed: ", err)
 		return
 	}
 	var fileCount, dirCount uint
-	var fileList []map[string]string
+	var fileList, dirList []map[string]string
 	for _, info := range fileInfos {
 		fileInfo := map[string]string{}
 		fileInfo["path"] = path.Join(req.Path, info.Name())
@@ -389,15 +385,24 @@ func GetSshDirInfo(c *gin.Context) {
 		if info.IsDir() {
 			fileInfo["type"] = "d"
 			dirCount += 1
+			dirList = append(dirList, fileInfo)
 		} else {
 			fileInfo["type"] = "f"
 			fileCount += 1
+			fileList = append(fileList, fileInfo)
 		}
-		fileList = append(fileList, fileInfo)
 	}
-	sort.Slice(fileList, func(i, j int) bool {
-		return fileList[i]["type"] < fileList[j]["type"]
+
+	// 按照name字段进行排序
+	sort.Slice(dirList, func(i, j int) bool {
+		return strings.ToLower(dirList[i]["name"]) < strings.ToLower(dirList[j]["name"])
 	})
+	sort.Slice(fileList, func(i, j int) bool {
+		return strings.ToLower(fileList[i]["name"]) < strings.ToLower(fileList[j]["name"])
+	})
+
+	// 将文件夹和文件合并
+	fileList = append(dirList, fileList...)
 
 	// 内部方法,处理路径信息
 	pathHandler := func(dirPath string) (paths []map[string]string) {
