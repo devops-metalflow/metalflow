@@ -3,8 +3,10 @@ package initialize
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	consulapi "github.com/hashicorp/consul/api"
+	probing "github.com/prometheus-community/pro-bing"
 	"gorm.io/gorm"
 	"io"
 	"metalflow/models"
@@ -15,6 +17,15 @@ import (
 	"metalflow/pkg/service"
 	"net/http"
 	"regexp"
+	"time"
+)
+
+const (
+	pingCount      = 5
+	pingTimeout    = 10
+	delayDuration  = 10
+	packetLoss     = 100
+	defaultSshPort = 22
 )
 
 // Consul start consul watch
@@ -38,11 +49,7 @@ func Consul() {
 					global.Log.Errorf("服务%s掉线了，但更新数据库失败: %v", shutdownServiceName, err)
 				}
 				// 发送邮件通知对应节点负责人
-				if global.Conf.Mail.Host != "" {
-					sendMail(shutdownServiceName)
-				} else {
-					global.Log.Errorf("服务器%s已掉线，未配置邮件服务器，无法发送邮件通知", shutdownServiceName)
-				}
+				handleServiceShutdown(shutdownServiceName)
 			}
 		}
 	}()
@@ -64,11 +71,11 @@ func UpdateStateByConsul(svc *consul.Service) {
 		if err != nil {
 			global.Log.Errorf("服务%s变化:%v，但更新数据库失败: %v", svc.Address, svc.Status, err)
 		}
-	} else if query.Error == gorm.ErrRecordNotFound {
+	} else if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 		normalHealth := models.SysNodeHealthNormal
 		newNode := &request.CreateNodeRequestStruct{
 			Address:     svc.Address,
-			SshPort:     22,
+			SshPort:     defaultSshPort,
 			ServicePort: svc.Port,
 			Health:      &normalHealth,
 			Creator:     "系统自动创建",
@@ -103,6 +110,43 @@ func UpdateStateByConsul(svc *consul.Service) {
 			global.Log.Errorf("update server [%s] os info failed: %v", svc.Address, err)
 		}
 	}
+}
+
+func handleServiceShutdown(serviceName string) {
+	// 延迟指定时间后再次检查服务状态
+	time.AfterFunc(delayDuration*time.Minute, func() {
+		// ping 服务
+		if !pingService(serviceName) {
+			// 服务仍然离线，发送邮件通知
+			sendMail(serviceName)
+		}
+	})
+}
+
+// pingService 通过 ping 检查服务是否在线。
+func pingService(serviceName string) bool {
+	pinger, err := probing.NewPinger(serviceName)
+	if err != nil {
+		global.Log.Errorf("创建 Pinger 失败: %v", err)
+		return false
+	}
+	pinger.Count = pingCount
+	pinger.Timeout = pingTimeout * time.Second
+	pinger.SetPrivileged(true)
+	pinger.OnRecv = func(pkt *probing.Packet) {
+		global.Log.Infof("收到 %s 的回复: %d bytes, seq=%d, time=%v", pkt.IPAddr, pkt.Nbytes, pkt.Seq, pkt.Rtt)
+	}
+	pinger.OnFinish = func(stats *probing.Statistics) {
+		logPingStatistics(stats)
+	}
+	_ = pinger.Run()
+	return pinger.Statistics().PacketLoss < packetLoss
+}
+
+// logPingStatistics 记录 ping 统计信息
+func logPingStatistics(stats *probing.Statistics) {
+	global.Log.Infof("%s 的 Ping 统计: %d packets transmitted, %d packets received, %v%% packet loss",
+		stats.Addr, stats.PacketsSent, stats.PacketsRecv, stats.PacketLoss)
 }
 
 func DeployInitWorkers(serverOs, address string, port int) error {
