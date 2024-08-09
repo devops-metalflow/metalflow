@@ -7,7 +7,7 @@ import (
 	"metalflow/pkg/global"
 	"net/http"
 
-	"gopkg.in/alecthomas/kingpin.v2"
+	"github.com/alecthomas/kingpin/v2"
 
 	// 加入pprof性能分析
 	_ "net/http/pprof" //nolint:gosec
