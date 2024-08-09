@@ -126,8 +126,10 @@ func (s *MysqlService) UpdateNodeById(nodeId uint, req *request.UpdateNodeReques
 		}
 		// 更新机器节点对应的labels
 		return s.TX.Model(&node).Association("Labels").Replace(labels)
+	} else {
+		// 如果标签为空，则删除节点的所有标签
+		return s.TX.Model(&node).Association("Labels").Clear()
 	}
-	return
 }
 
 func (s *MysqlService) DeleteNodeByIds(ids []uint) error {
